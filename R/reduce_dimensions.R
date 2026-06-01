@@ -487,7 +487,7 @@ we suggest to partition the dataset for sample clusters.
         (\(.) {
           message("Fraction of variance explained by the selected principal components")
           (.) %$% sdev |> pow(2) |> # Eigen value
-            unlist() |> divide_by(sum(unlist(.))) |>
+            unlist() |> divide_by(sum(unlist(prcomp_obj$sdev^2))) |>
             _[components] |>
             enframe() |>
             select(-name) |>
