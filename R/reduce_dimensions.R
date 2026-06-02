@@ -476,6 +476,8 @@ we suggest to partition the dataset for sample clusters.
       # Calculate principal components
       prcomp(scale = scale, ...)
     
+    var_explained = prcomp_obj$sdev^2 / sum(prcomp_obj$sdev^2)
+    var_explained = var_explained[components]
     # Return
     list(
       raw_result = prcomp_obj,
@@ -486,9 +488,7 @@ we suggest to partition the dataset for sample clusters.
         # output: PCA object
         (\(.) {
           message("Fraction of variance explained by the selected principal components")
-          (.) %$% sdev |> pow(2) |> # Eigen value
-            unlist() |> divide_by(sum(unlist(prcomp_obj$sdev^2))) |>
-            _[components] |>
+          var_explained |> 
             enframe() |>
             select(-name) |>
             rename(`Fraction of variance` = value) |>

@@ -29,6 +29,15 @@ test_that("reduce_dimensions with PCA works correctly", {
   expect_true("PC2" %in% names(SummarizedExperiment::colData(res)))
 })
 
+test_that("reduce_dimensions with PCA reports correct variance", {
+  testthat::expect_message(airway_mini |> 
+                             identify_abundant() |> 
+                             reduce_dimensions(assay = "counts", method = "PCA"), 
+                           "0.698") #this is the pct of variance explained by the first PC 
+})
+
+
+
 test_that("reduce_dimensions with MDS works correctly", {
   res <- airway_mini |> identify_abundant() |> reduce_dimensions(assay = "counts", method = "MDS")
   
