@@ -108,3 +108,9 @@
     \item Remove deprecated warnings and redundant messages
     \item Several bug fixes and optimizations
 }}
+
+\section{Changes in version 2.1.4, Bioconductor 3.23 Release}{
+\itemize{
+    \item Fixed bug in the reported variance covered by PCA dimensionality reduction
+    \item improved legibility in reduce_dimension (PCA only)
+}}
