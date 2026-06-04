@@ -31,3 +31,4 @@ renv/settings.json
 tidybulk.Rcheck/*
 ..Rcheck/*
 vignettes/cache/*
+tidybulk_check.Rproj
