@@ -62,6 +62,20 @@ test_that("rotate_dimensions works correctly", {
   skip("rotate_dimensions has column name compatibility issues")
 })
 
+test_that("plot_reduced_dimension works for PCA on SummarizedExperiment", {
+  library(ggplot2)
+  SummarizedExperiment::colData(airway_mini)$condition <-
+    SummarizedExperiment::colData(airway_mini)$dex
+
+  res <- airway_mini |>
+    identify_abundant() |>
+    reduce_dimensions(assay = "counts", method = "PCA", .dims = 3)
+
+  p <- plot_reduced_dimension(res, .color = condition, method = "PCA", dims = 1:2)
+
+  expect_s3_class(p, "ggplot")
+})
+
 # Test remove_redundancy function
 test_that("remove_redundancy works correctly", {
   res <- airway_mini |> identify_abundant() |> remove_redundancy(method = "correlation")
