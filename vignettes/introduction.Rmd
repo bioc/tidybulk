@@ -54,6 +54,7 @@ Function | Description
 Function | Description
 ------------ | -------------
 `reduce_dimensions()` | Reduce dimensions with PCA/MDS/tSNE/UMAP
+`plot_reduced_dimension()` | Plot reduced dimensions (PCA includes % variance)
 `rotate_dimensions()` | Rotate dimensions
 `remove_redundancy()` | Remove redundant features
 
@@ -505,6 +506,20 @@ airway |>
 	geom_point() +
 	my_theme +
 	labs(title = "PCA Analysis")
+```
+
+Alternatively, `plot_reduced_dimension()` builds the same plots from a `SummarizedExperiment`. For PCA it also annotates each axis with the percentage of variance explained.
+
+```{r eda-plot-reduced-dimension, fig.width = 10, fig.height = 10}
+airway |>
+  plot_reduced_dimension(.color = dex, method = "MDS", dims = 1:2) +
+  my_theme +
+  labs(title = "MDS Analysis")
+
+airway |>
+  plot_reduced_dimension(.color = dex, method = "PCA", dims = 1:2) +
+  my_theme +
+  labs(title = "PCA Analysis")
 ```
 
 ### Clustering Analysis

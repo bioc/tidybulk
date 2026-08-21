@@ -395,6 +395,14 @@ airway.norm.PCA |>
   GGally::ggpairs(columns = 11:13, ggplot2::aes(colour=`dex`))
 ```
 
+Alternatively, `plot_reduced_dimension()` can plot the reduced dimensions directly. For PCA it also reports the percentage of variance explained on each axis.
+
+```{r plot_reduced_dimension_pca, fig.width = 10, fig.height = 10}
+airway.norm.PCA |>
+  plot_reduced_dimension(.color = dex, method = "PCA", dims = 1:2) +
+  my_theme
+```
+
 
 
 ## Step 5: Rotate Dimensions
