@@ -144,7 +144,6 @@
 #' }
 #'
 #' @importFrom SummarizedExperiment assay rowData colData "rowData<-"
-#' @importFrom methods setGeneric setMethod
 #' @name estimate_dispersion
 #' @docType methods
 #' @rdname estimate_dispersion-methods
