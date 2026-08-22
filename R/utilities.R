@@ -91,6 +91,29 @@ error_if_wrong_input = function(.data, list_input, expected_type) {
 }
 
 
+#' Check that a formula is one-sided
+#'
+#' @keywords internal
+#' @noRd
+#'
+#' @param fm a formula
+#'
+check_formula <- function(fm, force_fixed_effects = FALSE) {
+  if (!inherits(fm, "formula"))
+    stop("tidybulk says: The .formula must be an R formula of the kind \"~ covariates\" ")
+  if (attr(terms(fm), "response") == 1)
+    stop("tidybulk says: The .formula must be of the kind \"~ covariates\" ")
+  if (force_fixed_effects && grepl("|", paste(deparse(fm), collapse = " "), fixed = TRUE)) {
+    stop(
+      "tidybulk says: the formula cannot include random effects. ",
+      "Write the fixed-effect analogue yourself, e.g. ~ dex + cell ",
+      "for ~ dex + (1 | cell), or ~ dex * cell for ~ dex + (dex | cell).",
+      call. = FALSE
+    )
+  }
+  invisible(fm)
+}
+
 #' .formula parser
 #'
 #' @keywords internal
@@ -104,10 +127,8 @@ error_if_wrong_input = function(.data, list_input, expected_type) {
 #'
 #'
 parse_formula <- function(fm) {
-  if (attr(terms(fm), "response") == 1)
-    stop("tidybulk says: The .formula must be of the kind \"~ covariates\" ")
-  else
-    as.character(attr(terms(fm), "variables"))[-1]
+  check_formula(fm)
+  as.character(attr(terms(fm), "variables"))[-1]
 }
 
 
