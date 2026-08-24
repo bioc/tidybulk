@@ -18,15 +18,20 @@
 #'   `(1 + treatment | donor)` as `donor + treatment:donor`.
 #' @param abundance Assay name (default `"counts"`).
 #' @param dispersion_column Name of the `rowData` column for tagwise (or
-#'   trended) dispersion \eqn{\phi_g} (default `"dispersion"`).
+#'   trended, above 1000 samples) dispersion \eqn{\phi_g} (default `"dispersion_shrinked"`).
+#' @param trended_dispersion_column Name of the `rowData` column for the
+#'   mean-dispersion trend \eqn{\phi(A_g)} (default `"dispersion_trended"`).
 #' @param dispersion_degrees_freedom_column Name of the `rowData` column for
 #'   the effective degrees of freedom \eqn{d_{eff}} behind that estimate
 #'   (default `"dispersion_degrees_freedom"`).
 #'
 #' @details
-#' Two columns are written, named by `dispersion_column` and
-#' `dispersion_degrees_freedom_column`. The first holds \eqn{\phi_g}; the
-#' second holds the effective degrees of freedom behind that estimate.
+#' Three columns are written, named by `dispersion_column`,
+#' `trended_dispersion_column`, and `dispersion_degrees_freedom_column`.
+#' The first holds gene-wise \eqn{\phi_g} (tagwise below 1000 samples,
+#' trended above); the second holds the mean-dispersion trend
+#' \eqn{\phi(A_g)}; the third holds the effective degrees of freedom
+#' behind the gene-wise estimate.
 #' [estimate_gene()] turns the pair into a **prior** on the negative binomial
 #' shape, not a plug-in: \eqn{\phi_g} locates the prior and \eqn{d_{eff}} sets
 #' its tightness, so the gene-wise likelihood can still pull the posterior
@@ -133,7 +138,8 @@
 #' [`estimateDisp()` reference manual](https://rdrr.io/bioc/edgeR/man/estimateDisp.html),
 #' [edgeR on Bioconductor](https://bioconductor.org/packages/release/bioc/html/edgeR.html)
 #'
-#' @return `.data` with `rowData(.data)[[dispersion_column]]` and
+#' @return `.data` with `rowData(.data)[[dispersion_column]]`,
+#'   `rowData(.data)[[trended_dispersion_column]]`, and
 #'   `rowData(.data)[[dispersion_degrees_freedom_column]]` filled. The raw
 #'   edgeR object is in `metadata(.)$tidybulk$estimateDisp`.
 #'
@@ -151,21 +157,28 @@
 setGeneric("estimate_dispersion", function(.data,
                                            formula_abundance,
                                            abundance = "counts",
-                                           dispersion_column = "dispersion",
+                                           dispersion_column = "dispersion_shrinked",
+                                           trended_dispersion_column = "dispersion_trended",
                                            dispersion_degrees_freedom_column = "dispersion_degrees_freedom")
   standardGeneric("estimate_dispersion"))
 
 .estimate_dispersion_se <- function(.data,
                                     formula_abundance,
                                     abundance = "counts",
-                                    dispersion_column = "dispersion",
+                                    dispersion_column = "dispersion_shrinked",
+                                    trended_dispersion_column = "dispersion_trended",
                                     dispersion_degrees_freedom_column = "dispersion_degrees_freedom") {
   dispersion_column <- check_dispersion_name(dispersion_column)
+  trended_dispersion_column <- check_trended_dispersion_name(trended_dispersion_column)
   dispersion_degrees_freedom_column <-
     check_degrees_freedom_name(dispersion_degrees_freedom_column)
-  if (identical(dispersion_column, dispersion_degrees_freedom_column)) {
+  if (anyDuplicated(c(
+    dispersion_column,
+    trended_dispersion_column,
+    dispersion_degrees_freedom_column
+  ))) {
     stop(
-      "tidybulk says: `dispersion_column` and `dispersion_degrees_freedom_column` must name different columns.",
+      "tidybulk says: `dispersion_column`, `trended_dispersion_column`, and `dispersion_degrees_freedom_column` must name different columns.",
       call. = FALSE
     )
   }
@@ -182,6 +195,7 @@ setGeneric("estimate_dispersion", function(.data,
     counts <- assay(.data, abundance)
     dispersion_object <- edgeR::estimateDisp(counts, design = design)
     disp <- dispersion_object$tagwise.dispersion
+    trended_disp <- dispersion_object$trended.dispersion
     d_eff <- (n_sample - ncol(design)) + dispersion_object$prior.df
   } 
   
@@ -199,10 +213,12 @@ setGeneric("estimate_dispersion", function(.data,
       rowsum.filter = 10
     )
     disp <- dispersion_object
+    trended_disp <- dispersion_object
     d_eff <- ncol(se_sub) - ncol(design)
   }
 
   rowData(.data)[[dispersion_column]] <- as.numeric(disp)
+  rowData(.data)[[trended_dispersion_column]] <- as.numeric(trended_disp)
   rowData(.data)[[dispersion_degrees_freedom_column]] <-
     rep_len(as.numeric(d_eff), nrow(.data))
 
@@ -260,4 +276,5 @@ dispersion_design <- function(se, formula) {
 }
 
 check_dispersion_name <- function(x) x
+check_trended_dispersion_name <- function(x) x
 check_degrees_freedom_name <- function(x) x

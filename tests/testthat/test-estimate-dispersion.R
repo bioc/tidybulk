@@ -31,10 +31,13 @@ test_that("estimate_dispersion writes a positive tagwise column on airway", {
 
   se <- airway_se(n_genes = 150)
   out <- suppressMessages(estimate_dispersion(se, ~ dex + cell, abundance = "counts"))
-  disp <- SummarizedExperiment::rowData(out)$dispersion
-  expect_equal(length(disp), nrow(se))
-  expect_true(all(is.finite(disp)))
-  expect_true(all(disp > 0))
+  rd <- SummarizedExperiment::rowData(out)
+  expect_equal(length(rd$dispersion_shrinked), nrow(se))
+  expect_true(all(is.finite(rd$dispersion_shrinked)))
+  expect_true(all(rd$dispersion_shrinked > 0))
+  expect_equal(length(rd$dispersion_trended), nrow(se))
+  expect_true(all(is.finite(rd$dispersion_trended)))
+  expect_true(all(rd$dispersion_trended > 0))
 })
 
 test_that("estimate_dispersion records d_eff = df.residual + prior.df", {
@@ -71,7 +74,11 @@ test_that("estimate_dispersion stores the edgeR object in tidybulk metadata", {
   expect_true("estimateDisp" %in% names(tb))
   expect_equal(
     as.numeric(tb$estimateDisp$tagwise.dispersion),
-    as.numeric(SummarizedExperiment::rowData(out)$dispersion)
+    as.numeric(SummarizedExperiment::rowData(out)$dispersion_shrinked)
+  )
+  expect_equal(
+    as.numeric(tb$estimateDisp$trended.dispersion),
+    as.numeric(SummarizedExperiment::rowData(out)$dispersion_trended)
   )
   expect_true("edger" %in% tb$methods_used)
 })
@@ -85,19 +92,21 @@ test_that("estimate_dispersion output column names are arguments", {
     ~ dex + cell,
     abundance = "counts",
     dispersion_column = "phi",
+    trended_dispersion_column = "phi_trend",
     dispersion_degrees_freedom_column = "phi_deff"
   ))
   rd <- SummarizedExperiment::rowData(out)
-  expect_true(all(c("phi", "phi_deff") %in% names(rd)))
-  expect_false(any(c("dispersion", "dispersion_degrees_freedom") %in% names(rd)))
+  expect_true(all(c("phi", "phi_trend", "phi_deff") %in% names(rd)))
+  expect_false(any(c("dispersion_shrinked", "dispersion_trended", "dispersion_degrees_freedom") %in% names(rd)))
   expect_true(all(rd$phi > 0))
+  expect_true(all(rd$phi_trend > 0))
   expect_length(unique(rd$phi_deff), 1L)
 
   expect_error(
     suppressMessages(estimate_dispersion(
       se, ~dex,
       dispersion_column = "x",
-      dispersion_degrees_freedom_column = "x"
+      trended_dispersion_column = "x"
     )),
     "different columns"
   )
@@ -140,7 +149,7 @@ test_that("estimate_dispersion spends degrees of freedom on the design", {
 
   se <- simulated_se()
   out <- suppressMessages(estimate_dispersion(se, ~ treatment * donor))
-  disp <- SummarizedExperiment::rowData(out)$dispersion
+  disp <- SummarizedExperiment::rowData(out)$dispersion_shrinked
   d_eff <- SummarizedExperiment::rowData(out)$dispersion_degrees_freedom
   expect_true(all(is.finite(disp) & disp > 0))
 
@@ -168,7 +177,7 @@ test_that("estimate_dispersion recovers the dispersion it was simulated with", {
   out <- suppressMessages(estimate_dispersion(se, ~ treatment + donor))
   expect_gt(
     stats::cor(
-      SummarizedExperiment::rowData(out)$dispersion,
+      SummarizedExperiment::rowData(out)$dispersion_shrinked,
       SummarizedExperiment::rowData(out)$true_dispersion,
       method = "spearman"
     ),

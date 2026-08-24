@@ -11,7 +11,8 @@ estimate_dispersion(
   .data,
   formula_abundance,
   abundance = "counts",
-  dispersion_column = "dispersion",
+  dispersion_column = "dispersion_shrinked",
+  trended_dispersion_column = "dispersion_trended",
   dispersion_degrees_freedom_column = "dispersion_degrees_freedom"
 )
 
@@ -19,7 +20,8 @@ estimate_dispersion(
   .data,
   formula_abundance,
   abundance = "counts",
-  dispersion_column = "dispersion",
+  dispersion_column = "dispersion_shrinked",
+  trended_dispersion_column = "dispersion_trended",
   dispersion_degrees_freedom_column = "dispersion_degrees_freedom"
 )
 
@@ -27,7 +29,8 @@ estimate_dispersion(
   .data,
   formula_abundance,
   abundance = "counts",
-  dispersion_column = "dispersion",
+  dispersion_column = "dispersion_shrinked",
+  trended_dispersion_column = "dispersion_trended",
   dispersion_degrees_freedom_column = "dispersion_degrees_freedom"
 )
 }
@@ -43,14 +46,18 @@ them yourself, e.g. `(1 | donor)` as `donor` and
 \item{abundance}{Assay name (default `"counts"`).}
 
 \item{dispersion_column}{Name of the `rowData` column for tagwise (or
-trended) dispersion \eqn{\phi_g} (default `"dispersion"`).}
+trended, above 1000 samples) dispersion \eqn{\phi_g} (default `"dispersion_shrinked"`).}
+
+\item{trended_dispersion_column}{Name of the `rowData` column for the
+mean-dispersion trend \eqn{\phi(A_g)} (default `"dispersion_trended"`).}
 
 \item{dispersion_degrees_freedom_column}{Name of the `rowData` column for
 the effective degrees of freedom \eqn{d_{eff}} behind that estimate
 (default `"dispersion_degrees_freedom"`).}
 }
 \value{
-`.data` with `rowData(.data)[[dispersion_column]]` and
+`.data` with `rowData(.data)[[dispersion_column]]`,
+  `rowData(.data)[[trended_dispersion_column]]`, and
   `rowData(.data)[[dispersion_degrees_freedom_column]]` filled. The raw
   edgeR object is in `metadata(.)$tidybulk$estimateDisp`.
 
@@ -70,9 +77,12 @@ yourself (`~ dex + cell` for `~ dex + (1 | cell)`, `~ dex * cell` for
 genes.
 }
 \details{
-Two columns are written, named by `dispersion_column` and
-`dispersion_degrees_freedom_column`. The first holds \eqn{\phi_g}; the
-second holds the effective degrees of freedom behind that estimate.
+Three columns are written, named by `dispersion_column`,
+`trended_dispersion_column`, and `dispersion_degrees_freedom_column`.
+The first holds gene-wise \eqn{\phi_g} (tagwise below 1000 samples,
+trended above); the second holds the mean-dispersion trend
+\eqn{\phi(A_g)}; the third holds the effective degrees of freedom
+behind the gene-wise estimate.
 [estimate_gene()] turns the pair into a **prior** on the negative binomial
 shape, not a plug-in: \eqn{\phi_g} locates the prior and \eqn{d_{eff}} sets
 its tightness, so the gene-wise likelihood can still pull the posterior
