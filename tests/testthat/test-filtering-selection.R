@@ -30,6 +30,22 @@ test_that("keep_abundant works correctly", {
   expect_true(nrow(res) <= nrow(airway_mini))
 })
 
+test_that("design rejects formulas and points to formula_design", {
+  expect_error(
+    airway_mini |> keep_abundant(design = ~dex),
+    "design.*must be a design matrix.*formula_design",
+    perl = TRUE
+  )
+  expect_error(
+    airway_mini |> identify_abundant(design = ~dex),
+    "design.*must be a design matrix.*formula_design",
+    perl = TRUE
+  )
+  expect_no_error(
+    airway_mini |> keep_abundant(formula_design = ~dex)
+  )
+})
+
 # Test keep_variable function
 test_that("keep_variable works correctly", {
   res <- airway_mini |> keep_variable()
