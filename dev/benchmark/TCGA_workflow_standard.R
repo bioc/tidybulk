@@ -42,7 +42,7 @@ for (i in 1:ncol(cts))
 dge = DGEList(counts = cts,
               sample = coldata,
               group = coldata$PFI.2)
-dge = calcNormFactors(dge, method = "TMM")
+dge = normLibSizes(dge, method = "TMM")
 logCPM = cpm(dge, log = TRUE, prior.count = 0.5)
 plot(density(logCPM[, 1]), type = 'n', ylim = c(0, .25))
 for (i in 1:ncol(cts))
