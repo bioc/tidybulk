@@ -98,19 +98,11 @@ error_if_wrong_input = function(.data, list_input, expected_type) {
 #'
 #' @param fm a formula
 #'
-check_formula <- function(fm, force_fixed_effects = FALSE) {
+check_formula <- function(fm) {
   if (!inherits(fm, "formula"))
     stop("tidybulk says: The .formula must be an R formula of the kind \"~ covariates\" ")
   if (attr(terms(fm), "response") == 1)
     stop("tidybulk says: The .formula must be of the kind \"~ covariates\" ")
-  if (force_fixed_effects && grepl("|", paste(deparse(fm), collapse = " "), fixed = TRUE)) {
-    stop(
-      "tidybulk says: the formula cannot include random effects. ",
-      "Write the fixed-effect analogue yourself, e.g. ~ dex + cell ",
-      "for ~ dex + (1 | cell), or ~ dex * cell for ~ dex + (dex | cell).",
-      call. = FALSE
-    )
-  }
   invisible(fm)
 }
 

@@ -1,9 +1,13 @@
 \name{NEWS}
 \title{News for Package \pkg{tidybulk}}
 
+\section{Changes in version 2.3.3}{
+\itemize{
+    \item For \code{glmmseq_lme4} and \code{glmmseq_glmmtmb}, tagwise dispersion is estimated internally with edgeR (\code{(1 | cell)} becomes \code{cell}) and plugged in. Pass \code{.dispersion} to override, or \code{plugin_dispersion = FALSE} to let each gene estimate phi.
+}}
+
 \section{Changes in version 2.3.2}{
 \itemize{
-    \item Added \code{estimate_dispersion()}, a \code{SummarizedExperiment} method that writes edgeR tagwise dispersion (\code{dispersion_shrinked}), trended dispersion (\code{dispersion_trended}), and effective degrees of freedom to \code{rowData}, and stores the raw edgeR object in \code{metadata(.)$tidybulk$estimateDisp}. Above 1000 samples only the trended estimate is computed.
     \item \strong{BREAKING CHANGE:} \code{reduce_dimensions()} no longer accepts \code{.abundance} (a tidy-eval assay symbol). The assay must be given explicitly as a character string via \code{assay = "..."}, matching \code{assayNames(object)}. Omitting \code{assay} or passing an unknown assay name raises an error, so users must deliberately choose which abundance matrix to use (commonly a library-size scaled assay from \code{scale_abundance()}). Update all calls, tests, and vignettes that used \code{.abundance = counts} to \code{assay = "counts"} (or the appropriate assay name).
     \item Added \code{identify_abundant_per_category()} and \code{keep_abundant_per_category()} as category-aware alternatives to \code{identify_abundant()} and \code{keep_abundant()}. These functions evaluate abundance within each experimental group independently and retain features that are sufficiently expressed in at least one category, making it possible to preserve group-specific or condition-specific signals that would be lost by global abundance filtering. The grouping is specified via \code{formula_design} (e.g. \code{~dex}), and the minimum number of categories required is controlled by \code{minimum_category} (default 1).
 }}

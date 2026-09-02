@@ -256,10 +256,19 @@ lmer_to_confidence_intervals_random_effects = function(fit){
 glmmTMBcore = function (geneList, fullFormula, reduced, data, family, control,
           offset, modelData, designMatrix, hyp.matrix, ...)
 {
-  data[, "count"] <- geneList
-  fit <- try(suppressMessages(suppressWarnings(glmmTMB::glmmTMB(fullFormula,
-                                                       data, family, control = control, offset = offset, ...))),
-             silent = TRUE)
+  data[, "count"] <- geneList$y
+  disp <- geneList$dispersion
+  extra <- list(...)
+  if (is.finite(disp) && disp > 0) {
+    extra$start$betadisp <- log(1 / disp)
+    extra$map$betadisp <- factor(NA)
+  }
+  fit <- try(suppressMessages(suppressWarnings(
+    do.call(
+      glmmTMB::glmmTMB,
+      c(list(fullFormula, data, family, control = control, offset = offset), extra)
+    )
+  )), silent = TRUE)
   if (!inherits(fit, "try-error")) {
     singular <- conv <- NA
     stdErr <- suppressWarnings(coef(summary(fit))$cond[, 2])
@@ -272,7 +281,9 @@ glmmTMBcore = function (geneList, fullFormula, reduced, data, family, control,
                   message = "vcov. failed to calculate", tryErrors = fit[1]))
 
     fixedEffects <- glmmTMB::fixef(fit)$cond
-    disp <- glmmTMB::sigma(fit)
+    if (!is.finite(disp) || disp <= 0) {
+      disp <- glmmTMB::sigma(fit)
+    }
     msg <- fit$fit$message
     stats <- setNames(c(disp, AIC(fit), as.numeric(logLik(fit))),
                       c("Dispersion", "AIC", "logLik"))
@@ -280,9 +291,12 @@ glmmTMBcore = function (geneList, fullFormula, reduced, data, family, control,
       test <- lmer_wald(fixedEffects, hyp.matrix, vcov.)
     }
     else {
-      fit2 <- try(suppressMessages(suppressWarnings(glmmTMB::glmmTMB(reduced,
-                                                            data, family, control = control, offset = offset,
-                                                            ...))), silent = TRUE)
+      fit2 <- try(suppressMessages(suppressWarnings(
+        do.call(
+          glmmTMB::glmmTMB,
+          c(list(reduced, data, family, control = control, offset = offset), extra)
+        )
+      )), silent = TRUE)
       if (!inherits(fit2, "try-error")) {
         lrt <- anova(fit, fit2)
         test <- list(chisq = setNames(lrt$Chisq[2], "LRT"),
@@ -327,9 +341,15 @@ glmerCore = function (geneList, fullFormula, reduced, data, control, offset,
 {
   data[, "count"] <- geneList$y
   disp <- geneList$dispersion
-  fit <- try(suppressMessages(suppressWarnings(lme4::glmer(fullFormula,
-                                                           data = data, control = control, offset = offset, family = MASS::negative.binomial(theta = 1/disp),
-                                                           ...))), silent = TRUE)
+  plugin <- is.finite(disp) && disp > 0
+  fit <- try(suppressMessages(suppressWarnings(
+    if (plugin) {
+      lme4::glmer(fullFormula, data = data, control = control, offset = offset,
+                  family = MASS::negative.binomial(theta = 1 / disp), ...)
+    } else {
+      lme4::glmer.nb(fullFormula, data = data, control = control, offset = offset, ...)
+    }
+  )), silent = TRUE)
 
 
   # If errors return
@@ -347,16 +367,23 @@ glmerCore = function (geneList, fullFormula, reduced, data, control, offset,
   conv <- length(slot(fit, "optinfo")$conv$lme4$messages)
   vcov. <- suppressWarnings(as.matrix(vcov(fit, complete = FALSE)))
   fixedEffects <- lme4::fixef(fit)
+  if (!plugin) {
+    disp <- 1 / lme4::getME(fit, "glmer.nb.theta")
+  }
   stats <- setNames(c(disp, AIC(fit), as.numeric(logLik(fit))),
                     c("Dispersion", "AIC", "logLik"))
   if (is.null(reduced)) {
     test <- lmer_wald(fixedEffects, hyp.matrix, vcov.)
   }
   else {
-    fit2 <- try(suppressMessages(suppressWarnings(lme4::glmer(reduced,
-                                                              data = data, control = control, offset = offset,
-                                                              family = MASS::negative.binomial(theta = 1/disp),
-                                                              ...))), silent = TRUE)
+    fit2 <- try(suppressMessages(suppressWarnings(
+      if (plugin) {
+        lme4::glmer(reduced, data = data, control = control, offset = offset,
+                    family = MASS::negative.binomial(theta = 1 / disp), ...)
+      } else {
+        lme4::glmer.nb(reduced, data = data, control = control, offset = offset, ...)
+      }
+    )), silent = TRUE)
     if (!inherits(fit2, "try-error")) {
       lrt <- anova(fit, fit2)
       test <- list(chisq = setNames(lrt$Chisq[2], "LRT"),
@@ -459,7 +486,11 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
                     returnList = FALSE, progress = FALSE, max_rows_for_matrix_multiplication = Inf, avoid_forking = FALSE, ...)
 {
   glmmcall <- match.call(expand.dots = TRUE)
-  method <- match.arg(method)
+  method <- method[1]
+  if (identical(tolower(method), "glmmtmb")) {
+    method <- "glmmTMB"
+  }
+  method <- match.arg(method, c("lme4", "glmmTMB"))
   if (is.null(control)) {
     control <- switch(method, lme4 = lme4::glmerControl(optimizer = "bobyqa"),
                       glmmTMB = glmmTMB::glmmTMBControl())
@@ -560,11 +591,13 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
     # FASTER - Stefano
     control$calc.derivs = FALSE
 
-    if (!all(rownames(countdata) %in% names(dispersion))) {
-      stop("Some dispersion values are missing")
-    }
+    plugin <- is.numeric(dispersion) &&
+      all(rownames(countdata) %in% names(dispersion))
     fullList <- lapply(rownames(countdata), function(i) {
-      list(y = countdata[i, ], dispersion = dispersion[i])
+      list(
+        y = countdata[i, ],
+        dispersion = if (plugin) unname(dispersion[i]) else NA_real_
+      )
     })
     if(cores == 1){
       resultList <- lapply(fullList, function(geneList) {
@@ -658,8 +691,13 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
     # FASTER - Stefano
     control$profile=TRUE
 
+    plugin <- is.numeric(dispersion) &&
+      all(rownames(countdata) %in% names(dispersion))
     fullList <- lapply(rownames(countdata), function(i) {
-      countdata[i, ]
+      list(
+        y = countdata[i, ],
+        dispersion = if (plugin) unname(dispersion[i]) else NA_real_
+      )
     })
 
     if(cores == 1){

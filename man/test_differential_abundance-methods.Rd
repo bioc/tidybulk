@@ -73,7 +73,7 @@ test_differential_abundance(
 
 \item{contrasts}{This parameter takes the format of the contrast parameter of the method of choice. For edgeR and limma-voom is a character vector. For DESeq2 is a list including a character vector of length three. The first covariate is the one the model is tested against (e.g., ~ factor_of_interest)}
 
-\item{method}{A character vector. Available methods are "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT), "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb". Only one method can be specified at a time.}
+\item{method}{A character vector. Available methods are "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT), "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb". Only one method can be specified at a time. For glmmSeq, tagwise edgeR dispersion is estimated internally and plugged in; pass `.dispersion` to override, or `plugin_dispersion = FALSE` to let each gene estimate phi.}
 
 \item{test_above_log2_fold_change}{A positive real value. This works for edgeR and limma_voom methods. It uses the `treat` function, which tests that the difference in abundance is bigger than this threshold rather than zero \url{https://pubmed.ncbi.nlm.nih.gov/19176553}.}
 
@@ -83,7 +83,7 @@ test_differential_abundance(
 
 \item{prefix}{A character string. The prefix you would like to add to the result columns. It is useful if you want to compare several methods.}
 
-\item{...}{Further arguments passed to some of the internal experimental functions. For example for glmmSeq, it is possible to pass .dispersion, and .scaling_factor column tidyeval to skip the caluclation of dispersion and scaling and use precalculated values. This is helpful is you want to calculate those quantities on many genes and do DE testing on fewer genes. .scaling_factor is the TMM value that can be obtained with tidybulk::scale_abundance.}
+\item{...}{Further arguments passed to some of the internal experimental functions. For glmmSeq: `.dispersion` (column name) or `plugin_dispersion = FALSE` (each gene estimates phi; useful with many samples); `.scaling_factor` skips TMM and uses that column from [scale_abundance()].}
 
 \item{significance_threshold}{DEPRECATED - A real between 0 and 1 (usually 0.05).}
 
@@ -152,18 +152,9 @@ DESeq2::results()
 
 Underlying method for glmmSeq framework:
 
-counts =
-.data |>
-  assay(my_assay)
+counts = assay(.data, my_assay)
 
-# Create design matrix for dispersion, removing random effects
-design =
-  model.matrix(
-    object = .formula |> lme4::nobars(),
-    data = metadata
-  )
-
-dispersion = counts |> edgeR::estimateDisp(design = design) %$% tagwise.dispersion |> setNames(rownames(counts))
+# Tagwise phi from edgeR, unless plugin_dispersion = FALSE.
 
   glmmSeq( .formula,
            countdata = counts ,
