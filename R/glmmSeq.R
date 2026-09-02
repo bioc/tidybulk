@@ -71,7 +71,7 @@ organiseStats = function (resultList, test.stat)
 
 hyp_matrix = function (fullFormula, metadata, LHS)
 {
-  reduced2 <- lme4::nobars(fullFormula)
+  reduced2 <- reformulas::nobars(fullFormula)
   fac <- attr(terms(reduced2), "factors")
   data2 <- metadata
   data2[, LHS] <- rep(0, nrow(data2))
@@ -491,12 +491,9 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
     method <- "glmmTMB"
   }
   method <- match.arg(method, c("lme4", "glmmTMB"))
-  if (is.null(control)) {
-    control <- switch(method, lme4 = lme4::glmerControl(optimizer = "bobyqa"),
-                      glmmTMB = glmmTMB::glmmTMBControl())
-  }
   countdata <- as.matrix(countdata)
-  if (length(lme4::findbars(modelFormula)) == 0) {
+  check_and_install_packages("reformulas")
+  if (length(reformulas::findbars(modelFormula)) == 0) {
     stop("No random effects terms specified in formula")
   }
   if (ncol(countdata) != nrow(metadata)) {
@@ -512,11 +509,11 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
   if (zeroCount > 0)
     countdata[countdata == 0] <- zeroCount
   fullFormula <- update.formula(modelFormula, count ~ ., simplify = FALSE)
-  subFormula <- lme4::subbars(modelFormula)
+  subFormula <- reformulas::subbars(modelFormula)
   variables <- rownames(attr(terms(subFormula), "factors"))
   subsetMetadata <- metadata[, variables, drop=FALSE]
   if (is.null(id)) {
-    fb <- lme4::findbars(modelFormula)
+    fb <- reformulas::findbars(modelFormula)
     id <- sub(".*[|]", "", fb)
     id <- gsub(" ", "", id)
   }
@@ -535,7 +532,7 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
   if (verbose)
     message(paste0("\nn = ", length(ids), " samples, ", length(unique(ids)),
                " individuals\n"))
-  FEformula <- lme4::nobars(modelFormula)
+  FEformula <- reformulas::nobars(modelFormula)
   if (is.null(modelData)) {
     reducedVars <- rownames(attr(terms(FEformula), "factors"))
     varLevels <- lapply(reducedVars, function(x) {
@@ -562,10 +559,10 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
     hyp.matrix <- hyp_matrix(fullFormula, metadata, "count")
   }
   else {
-    if (length(lme4::findbars(reduced)) == 0) {
+    if (length(reformulas::findbars(reduced)) == 0) {
       stop("No random effects terms specified in reduced formula")
     }
-    subReduced <- lme4::subbars(reduced)
+    subReduced <- reformulas::subbars(reduced)
     redvars <- rownames(attr(terms(subReduced), "factors"))
     if (any(!redvars %in% variables)) {
       stop("Extra terms in reduced formula not found full formula")
@@ -587,6 +584,10 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
 
 
   if (method == "lme4") {
+    check_and_install_packages("lme4")
+    if (is.null(control)) {
+      control <- lme4::glmerControl(optimizer = "bobyqa")
+    }
 
     # FASTER - Stefano
     control$calc.derivs = FALSE
@@ -687,6 +688,10 @@ glmmSeq = function (modelFormula, countdata, metadata, id = NULL, dispersion = N
     }
   }
   else {
+    check_and_install_packages("glmmTMB")
+    if (is.null(control)) {
+      control <- glmmTMB::glmmTMBControl()
+    }
 
     # FASTER - Stefano
     control$profile=TRUE

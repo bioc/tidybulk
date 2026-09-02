@@ -4,6 +4,7 @@
 \section{Changes in version 2.3.3}{
 \itemize{
     \item For \code{glmmseq_lme4} and \code{glmmseq_glmmtmb}, tagwise dispersion is estimated internally with edgeR (\code{(1 | cell)} becomes \code{cell}) and plugged in. Pass \code{.dispersion} to override, or \code{plugin_dispersion = FALSE} to let each gene estimate phi.
+    \item Use \code{reformulas::nobars}/\code{findbars}/\code{subbars} instead of the deprecated \code{lme4} shims in the glmmSeq backend.
 }}
 
 \section{Changes in version 2.3.2}{
