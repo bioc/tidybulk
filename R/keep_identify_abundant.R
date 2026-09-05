@@ -117,6 +117,8 @@ setGeneric("identify_abundant", function(.data,
     design <- model.matrix(formula_design, data = colData(.data))
   }
   
+  check_design_is_not_formula(design)
+  
   # Map factor_of_interest to design if design is NULL and factor_of_interest is provided (for backward compatibility)
   if (!quo_is_null(factor_of_interest) && is.null(design)) {
     # If factor_of_interest is a quosure or symbol, convert to character
@@ -340,6 +342,8 @@ setGeneric("keep_abundant", function(.data,
     if (!is.null(design)) warning("Both formula_design and design provided; formula_design will be used.")
     design <- model.matrix(formula_design, data = colData(.data))
   }
+  
+  check_design_is_not_formula(design)
   
   # Soft-deprecate .abundance, prefer abundance (character)
   if (!is.null(.abundance)) {

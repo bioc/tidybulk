@@ -108,6 +108,8 @@ setGeneric("identify_abundant_per_category",
     }
   }
   
+  check_design_is_not_formula(design)
+  
   # check if design is categorical
   if(any(!design%in%c(0,1))){
     if(coerce_design){
@@ -313,6 +315,8 @@ setGeneric("keep_abundant_per_category",
       design <- model.matrix( ~ 1, data = colData(.data))
     }
   }
+  
+  check_design_is_not_formula(design)
   
   # check if design is categorical
   if(any(!design%in%c(0,1))){

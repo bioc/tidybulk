@@ -19,6 +19,25 @@ my_stop = function() {
       ")
 }
 
+#' Stop if design is a formula instead of a matrix
+#'
+#' @keywords internal
+#' @noRd
+#'
+#' @param design Design argument value (matrix, NULL, or incorrectly a formula)
+#'
+#' @return Invisible NULL; stops if design inherits from "formula"
+check_design_is_not_formula = function(design) {
+  if (inherits(design, "formula")) {
+    stop(
+      "tidybulk says: 'design' must be a design matrix, not a formula. ",
+      "Use formula_design = ~... instead, e.g. formula_design = ~dex.",
+      call. = FALSE
+    )
+  }
+  invisible(NULL)
+}
+
 
 
 

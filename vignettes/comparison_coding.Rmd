@@ -251,7 +251,7 @@ dgList <- DGEList(count_m=x,group=group)
 keep <- filterByExpr(dgList)
 dgList <- dgList[keep,,keep.lib.sizes=FALSE]
 # ... additional processing steps ...
-dgList <- calcNormFactors(dgList, method="TMM")
+dgList <- normLibSizes(dgList, method="TMM")
 norm_counts.table <- cpm(dgList)
 ```
 </div>
@@ -481,7 +481,7 @@ library(edgeR)
 dgList <- DGEList(counts=counts_m,group=group)
 keep <- filterByExpr(dgList)
 dgList <- dgList[keep,,keep.lib.sizes=FALSE]
-dgList <- calcNormFactors(dgList)
+dgList <- normLibSizes(dgList)
 design <- model.matrix(~group)
 dgList <- estimateDisp(dgList,design)
 fit <- glmQLFit(dgList,design)
@@ -657,7 +657,7 @@ count_m_log = log(count_m + 1)
 design = model.matrix(~ dex, data = annotation)
 
 dge = DGEList(counts = count_m)
-dge = calcNormFactors(dge)
+dge = normLibSizes(dge)
 dge = estimateDisp(dge, design)
 
 fit = glmQLFit(dge, design)

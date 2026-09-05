@@ -80,7 +80,7 @@ test_differential_abundance(
 
 \item{test_above_log2_fold_change}{A positive real value. This works for edgeR and limma_voom methods. It uses the `treat` function, which tests that the difference in abundance is bigger than this threshold rather than zero \url{https://pubmed.ncbi.nlm.nih.gov/19176553}.}
 
-\item{scaling_method}{A character string. The scaling method passed to the back-end functions: edgeR and limma-voom (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile"). Setting the parameter to \"none\" will skip the compensation for sequencing-depth for the method edgeR or limma_voom.}
+\item{scaling_method}{A character string. The scaling method passed to the back-end functions: edgeR and limma-voom (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile"). Setting the parameter to \"none\" will skip the compensation for sequencing-depth for the method edgeR or limma_voom.}
 
 \item{omit_contrast_in_colnames}{If just one contrast is specified you can choose to omit the contrast label in the colnames.}
 
@@ -132,7 +132,7 @@ keep_abundant(
 
 		# edgeR
 		edgeR::DGEList(counts = .) |>
-		edgeR::calcNormFactors(method = scaling_method) |>
+		edgeR::normLibSizes(method = scaling_method) |>
 		edgeR::estimateDisp(design) |>
 
 		# Fit

@@ -12,7 +12,7 @@
 #'
 #' @param .data A `tbl` (with at least three columns for sample, feature and transcript abundance) or `SummarizedExperiment` (more convenient if abstracted to tibble with library(tidySummarizedExperiment))
 #' @param abundance The name of the transcript/gene abundance column (character, preferred)
-#' @param method A character string. The scaling method passed to the back-end function (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile")
+#' @param method A character string. The scaling method passed to the back-end function (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile")
 #' @param reference_sample A character string. The name of the reference sample. If NULL the sample with highest total read count will be selected as reference.
 #' @param .subset_for_scaling A gene-wise quosure condition. This will be used to filter rows (features/genes) of the dataset. For example
 #' @param suffix A character string to append to the scaled abundance column name. Default is "_scaled".
@@ -28,7 +28,7 @@
 #' The scaling inference is then applied back to all unfiltered data.
 #'
 #' Underlying method
-#' edgeR::calcNormFactors(.data, method = c("TMM","TMMwsp","RLE","upperquartile"))
+#' edgeR::normLibSizes(.data, method = c("TMM","TMMwsp","RLE","upperquartile"))
 #'
 #'
 #'
@@ -176,7 +176,7 @@ setGeneric("scale_abundance", function(.data,
   
   # Calculate TMM
   nf <-
-    edgeR::calcNormFactors(
+    edgeR::normLibSizes(
       my_counts_filtered,
       refColumn = reference,
       method = method
