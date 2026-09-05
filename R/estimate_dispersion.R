@@ -28,7 +28,12 @@ estimate_dispersion <- function(.data, formula_abundance, abundance = "counts") 
     )
   }
 
+  formula_txt <- paste(deparse(formula_abundance), collapse = "")
   if (n_sample < 1000L) {
+    message(
+      "tidybulk says: calculating tagwise (shrinked) and trended dispersion ",
+      "with edgeR::estimateDisp() using ", formula_txt, "."
+    )
     counts <- assay(.data, abundance)
     fit <- edgeR::estimateDisp(counts, design = design)
     disp <- fit$tagwise.dispersion
@@ -40,6 +45,10 @@ estimate_dispersion <- function(.data, formula_abundance, abundance = "counts") 
     design <- stats::model.matrix(
       formula_abundance,
       data = droplevels(as.data.frame(colData(se_sub)))
+    )
+    message(
+      "tidybulk says: n >= 1000; calculating trended dispersion ",
+      "with edgeR::estimateTrendedDisp()."
     )
     fit <- edgeR::estimateTrendedDisp(
       assay(se_sub, abundance),

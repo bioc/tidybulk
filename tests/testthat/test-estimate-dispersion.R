@@ -25,7 +25,10 @@ simulated_se <- function(n_genes = 100) {
 test_that("estimate_dispersion writes tagwise phi", {
   skip_if_not_installed("edgeR")
   se <- simulated_se()
-  out <- estimate_dispersion(se, ~ treatment + donor)
+  expect_message(
+    out <- estimate_dispersion(se, ~ treatment + donor),
+    "tagwise \\(shrinked\\) and trended dispersion"
+  )
   rd <- SummarizedExperiment::rowData(out)
   expect_true(all(is.finite(rd$dispersion_shrinked) & rd$dispersion_shrinked > 0))
   expect_true(all(is.finite(rd$dispersion_trended) & rd$dispersion_trended > 0))

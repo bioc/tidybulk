@@ -1133,14 +1133,24 @@ get_differential_transcript_abundance_glmmSeq_SE <- function(
     if (!col %in% colnames(rowData(.data))) {
       stop("tidybulk says: dispersion column '", col, "' was not found in rowData.", call. = FALSE)
     }
+    message(
+      "tidybulk says: using precomputed dispersion from rowData column '", col, "'."
+    )
     dispersion <- stats::setNames(as.numeric(rowData(.data)[[col]]), rownames(.data))[rownames(counts)]
   } else if (!is.null(formula_dispersion)) {
     .data <- estimate_dispersion(.data, formula_dispersion, my_assay)
+    message(
+      "tidybulk says: plugging rowData column dispersion_shrinked into glmmSeq."
+    )
     dispersion <- stats::setNames(
       as.numeric(rowData(.data)$dispersion_shrinked),
       rownames(.data)
     )[rownames(counts)]
   } else {
+    message(
+      "tidybulk says: no formula_dispersion or .dispersion given; ",
+      "glmmSeq will estimate phi for each gene."
+    )
     dispersion <- NA
   }
   
