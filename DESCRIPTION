@@ -43,7 +43,7 @@ Suggests:
     BiocManager,
     Rsubread,
     e1071,
-    edgeR,
+    edgeR (>= 3.42.0),
     limma,
     org.Hs.eg.db,
     org.Mm.eg.db,

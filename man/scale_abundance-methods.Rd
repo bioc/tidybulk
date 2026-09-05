@@ -48,7 +48,7 @@ scale_abundance(
 
 \item{abundance}{The name of the transcript/gene abundance column (character, preferred)}
 
-\item{method}{A character string. The scaling method passed to the back-end function (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile")}
+\item{method}{A character string. The scaling method passed to the back-end function (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile")}
 
 \item{reference_sample}{A character string. The name of the reference sample. If NULL the sample with highest total read count will be selected as reference.}
 
@@ -82,7 +82,7 @@ are filtered out from the scaling procedure.
 The scaling inference is then applied back to all unfiltered data.
 
 Underlying method
-edgeR::calcNormFactors(.data, method = c("TMM","TMMwsp","RLE","upperquartile"))
+edgeR::normLibSizes(.data, method = c("TMM","TMMwsp","RLE","upperquartile"))
 }
 \examples{
 ## Load airway dataset for examples

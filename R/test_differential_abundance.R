@@ -19,7 +19,7 @@
 #' @param contrasts This parameter takes the format of the contrast parameter of the method of choice. For edgeR and limma-voom is a character vector. For DESeq2 is a list including a character vector of length three. The first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
 #' @param method A character vector. Available methods are "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT), "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb". Only one method can be specified at a time. For glmmSeq, tagwise edgeR dispersion is estimated internally and plugged in; pass `.dispersion` to override, or `plugin_dispersion = FALSE` to let each gene estimate phi.
 #' @param test_above_log2_fold_change A positive real value. This works for edgeR and limma_voom methods. It uses the `treat` function, which tests that the difference in abundance is bigger than this threshold rather than zero \url{https://pubmed.ncbi.nlm.nih.gov/19176553}.
-#' @param scaling_method A character string. The scaling method passed to the back-end functions: edgeR and limma-voom (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile"). Setting the parameter to \"none\" will skip the compensation for sequencing-depth for the method edgeR or limma_voom.
+#' @param scaling_method A character string. The scaling method passed to the back-end functions: edgeR and limma-voom (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile"). Setting the parameter to \"none\" will skip the compensation for sequencing-depth for the method edgeR or limma_voom.
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
 #' @param prefix A character string. The prefix you would like to add to the result columns. It is useful if you want to compare several methods.
 #' @param significance_threshold DEPRECATED - A real between 0 and 1 (usually 0.05).
@@ -50,7 +50,7 @@
 #'
 #'			# edgeR
 #'			edgeR::DGEList(counts = .) |>
-#'			edgeR::calcNormFactors(method = scaling_method) |>
+#'			edgeR::normLibSizes(method = scaling_method) |>
 #'			edgeR::estimateDisp(design) |>
 #'
 #'			# Fit
@@ -436,7 +436,7 @@ setMethod(
 #' @param contrasts This parameter takes the format of the contrast parameter of the method of choice. For edgeR and limma-voom is a character vector. For DESeq2 is a list including a character vector of length three. The first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
 #' @param method A character vector. Available methods are "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT), "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb". Only one method can be specified at a time. For glmmSeq, tagwise edgeR dispersion is estimated internally and plugged in; pass `.dispersion` to override, or `plugin_dispersion = FALSE` to let each gene estimate phi.
 #' @param test_above_log2_fold_change A positive real value. This works for edgeR and limma_voom methods. It uses the `treat` function, which tests that the difference in abundance is bigger than this threshold rather than zero \url{https://pubmed.ncbi.nlm.nih.gov/19176553}.
-#' @param scaling_method A character string. The scaling method passed to the back-end functions: edgeR and limma-voom (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile"). Setting the parameter to \"none\" will skip the compensation for sequencing-depth for the method edgeR or limma_voom.
+#' @param scaling_method A character string. The scaling method passed to the back-end functions: edgeR and limma-voom (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile"). Setting the parameter to \"none\" will skip the compensation for sequencing-depth for the method edgeR or limma_voom.
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
 #' @param prefix A character string. The prefix you would like to add to the result columns. It is useful if you want to compare several methods.
 #' @param significance_threshold DEPRECATED - A real between 0 and 1 (usually 0.05).
@@ -467,7 +467,7 @@ setMethod(
 #'
 #'			# edgeR
 #'			edgeR::DGEList(counts = .) |>
-#'			edgeR::calcNormFactors(method = scaling_method) |>
+#'			edgeR::normLibSizes(method = scaling_method) |>
 #'			edgeR::estimateDisp(design) |>
 #'
 #'			# Fit
@@ -674,7 +674,7 @@ setMethod(
 #' @param .contrasts A character vector. See edgeR makeContrasts specification for the parameter `contrasts`. If contrasts are not present the first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
 #' @param method A string character. Either "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT)
 #' @param test_above_log2_fold_change A positive real value. This works for edgeR and limma_voom methods. It uses the `treat` function, which tests that the difference in abundance is bigger than this threshold rather than zero \url{https://pubmed.ncbi.nlm.nih.gov/19176553}.
-#' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile")
+#' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile")
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
 #' @param .abundance DEPRECATED. The name of the transcript/gene abundance column (symbolic, for backward compatibility)
 #'
@@ -755,7 +755,7 @@ get_differential_transcript_abundance_bulk_SE <- function(
     edgeR::DGEList() 
   
   if(scaling_method != "none")
-    edgeR_object = edgeR_object |> edgeR::calcNormFactors(method = scaling_method)
+    edgeR_object = edgeR_object |> edgeR::normLibSizes(method = scaling_method)
   
   
 
@@ -858,7 +858,7 @@ get_differential_transcript_abundance_bulk_SE <- function(
 #' @param .formula a formula with no response variable, referring only to numeric variables
 #' @param .contrasts A character vector. See voom makeContrasts specification for the parameter `contrasts`. If contrasts are not present the first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
 #' @param method A string character. Either "limma_voom", "limma_voom_sample_weights"
-#' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile")
+#' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile")
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
 #' @param .abundance DEPRECATED. The name of the transcript/gene abundance column (symbolic, for backward compatibility)
 #'
@@ -939,7 +939,7 @@ get_differential_transcript_abundance_bulk_voom_SE <- function(
   # Scale data if method is not "none"
   # use if else instead of when
   if(scaling_method != "none")
-    voom_object = voom_object |> edgeR::calcNormFactors(method = scaling_method)
+    voom_object = voom_object |> edgeR::normLibSizes(method = scaling_method)
   
   
   if(tolower(method) == "limma_voom")
@@ -1048,7 +1048,7 @@ get_differential_transcript_abundance_bulk_voom_SE <- function(
 #' @param .formula a formula with no response variable, referring only to numeric variables
 #' @param .contrasts A character vector. See edgeR makeContrasts specification for the parameter `contrasts`. If contrasts are not present the first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
 #' @param method A string character. Either "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT)
-#' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile")
+#' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile")
 #' @param .scaling_factor A tidyeval (column name) for the precalculated TMM scaling
 #' @param plugin_dispersion If FALSE, skip edgeR and let each gene estimate phi.
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
@@ -1138,7 +1138,7 @@ get_differential_transcript_abundance_glmmSeq_SE <- function(
   if(.scaling_factor |> quo_is_symbolic())
     sizeFactors = .data |> pivot_sample() |> pull(!!.scaling_factor)
   else
-    sizeFactors <- counts |> edgeR::calcNormFactors(method = scaling_method)
+    sizeFactors <- counts |> edgeR::normLibSizes(method = scaling_method)
   
   
   glmmSeq_object =
@@ -1193,7 +1193,7 @@ get_differential_transcript_abundance_glmmSeq_SE <- function(
 #' @param .formula a formula with no response variable, referring only to numeric variables
 #' @param .contrasts A character vector. See edgeR makeContrasts specification for the parameter `contrasts`. If contrasts are not present the first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
 #' @param method A string character. Either "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT)
-#' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::calcNormFactors; "TMM","TMMwsp","RLE","upperquartile")
+#' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile")
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
 #' @param ... Additional arguments for DESeq2
 #'
