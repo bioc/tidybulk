@@ -25,33 +25,19 @@ simulated_se <- function(n_genes = 100) {
 test_that("estimate_dispersion writes tagwise phi", {
   skip_if_not_installed("edgeR")
   se <- simulated_se()
-  out <- suppressMessages(estimate_dispersion(se, ~ treatment + donor))
+  out <- estimate_dispersion(se, ~ treatment + donor)
   rd <- SummarizedExperiment::rowData(out)
   expect_true(all(is.finite(rd$dispersion_shrinked) & rd$dispersion_shrinked > 0))
   expect_true(all(is.finite(rd$dispersion_trended) & rd$dispersion_trended > 0))
 })
 
-test_that("(1 | donor) is treated as donor, not dropped", {
+test_that("a mixed-model formula is an error", {
   skip_if_not_installed("edgeR")
   se <- simulated_se()
-  mixed <- suppressMessages(estimate_dispersion(se, ~ treatment + (1 | donor)))
-  analogue <- suppressMessages(estimate_dispersion(se, ~ treatment + donor))
-  expect_equal(
-    SummarizedExperiment::rowData(mixed)$dispersion_shrinked,
-    SummarizedExperiment::rowData(analogue)$dispersion_shrinked
+  expect_error(
+    estimate_dispersion(se, ~ treatment + (1 | donor)),
+    "no random effects"
   )
-
-  nobars <- edgeR::estimateDisp(
-    SummarizedExperiment::assay(se, "counts"),
-    design = stats::model.matrix(
-      ~ treatment,
-      data = as.data.frame(SummarizedExperiment::colData(se))
-    )
-  )$tagwise.dispersion
-  expect_false(isTRUE(all.equal(
-    unname(SummarizedExperiment::rowData(mixed)$dispersion_shrinked),
-    unname(nobars)
-  )))
 })
 
 test_that("a saturated design is an error", {
@@ -59,14 +45,7 @@ test_that("a saturated design is an error", {
   se <- simulated_se()
   se$sid <- factor(colnames(se))
   expect_error(
-    estimate_dispersion(se, ~ treatment + (1 | sid)),
+    estimate_dispersion(se, ~ treatment + sid),
     "no residual degrees of freedom"
-  )
-})
-
-test_that("fixed_effects_formula expands (1 | g) to g", {
-  expect_equal(
-    attr(stats::terms(tidybulk:::fixed_effects_formula(~ dex + (1 | cell))), "term.labels"),
-    c("dex", "cell")
   )
 })

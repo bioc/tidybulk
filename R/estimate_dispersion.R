@@ -1,37 +1,17 @@
 # Internal. edgeR tagwise (or trended if n >= 1000) written to rowData.
-# `(1 | g)` becomes `g` so grouping spends residual df rather than inflating phi.
-
-fixed_effects_formula <- function(formula) {
-  labels <- attr(stats::terms(formula), "term.labels")
-  is_re <- grepl("|", labels, fixed = TRUE)
-  if (!any(is_re)) {
-    return(formula)
-  }
-  extra <- unlist(lapply(labels[is_re], function(term) {
-    sides <- trimws(strsplit(term, "|", fixed = TRUE)[[1]])
-    lhs <- stats::terms(stats::as.formula(paste("~", sides[[1]])))
-    group <- attr(stats::terms(stats::as.formula(paste("~", sides[[length(sides)]]))), "term.labels")
-    out <- if (attr(lhs, "intercept") == 1L) group else character()
-    lhs_lab <- attr(lhs, "term.labels")
-    if (length(lhs_lab) && length(group)) {
-      out <- c(out, as.vector(outer(lhs_lab, group, paste, sep = ":")))
-    }
-    out
-  }), use.names = FALSE)
-  stats::reformulate(unique(c(labels[!is_re], extra)))
-}
+# formula_abundance must be a fixed-effects formula; the user chooses it.
 
 estimate_dispersion <- function(.data, formula_abundance, abundance = "counts") {
   check_and_install_packages("edgeR")
   check_formula(formula_abundance)
   if (grepl("|", paste(deparse(formula_abundance), collapse = ""), fixed = TRUE)) {
-    converted <- fixed_effects_formula(formula_abundance)
-    message(
-      "tidybulk says: ", paste(deparse(formula_abundance), collapse = ""),
-      " converted to ", paste(deparse(converted), collapse = ""),
-      " for edgeR dispersion (edgeR has no random effects)."
+    stop(
+      "tidybulk says: estimate_dispersion() uses edgeR, which has no random effects. ",
+      "Pass a fixed-effects formula (e.g. ~ treatment + donor), not ",
+      paste(deparse(formula_abundance), collapse = ""),
+      ".",
+      call. = FALSE
     )
-    formula_abundance <- converted
   }
 
   n_sample <- ncol(.data)
