@@ -257,6 +257,10 @@ glmmTMBcore = function (geneList, fullFormula, reduced, data, family, control,
           offset, modelData, designMatrix, hyp.matrix, ...)
 {
   data[, "count"] <- geneList$y
+  # Plugin edgeR phi so glmmTMB does not estimate it per gene (same idea as
+  # glmer with MASS::negative.binomial(theta = 1/disp) vs glmer.nb).
+  # nbinom2 uses Var = μ + μ²/θ, so θ = 1/φ; betadisp is log(θ).
+  # map$betadisp = factor(NA) fixes that parameter at start.
   disp <- geneList$dispersion
   extra <- list(...)
   if (is.finite(disp) && disp > 0) {
