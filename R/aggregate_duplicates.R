@@ -252,7 +252,9 @@ setGeneric("aggregate_duplicates", function(.data,
   
   if(!is.null(rowRanges(.data))){
     
-    new_range_data = rowRanges(.data) |> as_tibble()
+    # Use as.data.frame() first: tibble::as_tibble() on GRanges can dispatch through
+    # S4Vectors List methods that fail on Bioconductor devel (GRanges does not support [[).
+    new_range_data = rowRanges(.data) |> as.data.frame() |> as_tibble()
     
     # If GRangesList & and .transcript is not there add .transcript
     if(is(rowRanges(.data), "CompressedGRangesList") & !quo_name(.transcript) %in% colnames(new_range_data)){
