@@ -1,6 +1,11 @@
 \name{NEWS}
 \title{News for Package \pkg{tidybulk}}
 
+\section{Changes in version 2.3.3}{
+\itemize{
+    \item Fix \code{aggregate_duplicates()} for SummarizedExperiment objects with \code{GRanges} row ranges on Bioconductor devel: convert ranges with \code{as.data.frame()} before \code{as_tibble()} to avoid broken S4Vectors List dispatch.
+}}
+
 \section{Changes in version 2.3.2}{
 \itemize{
     \item \strong{BREAKING CHANGE:} \code{reduce_dimensions()} no longer accepts \code{.abundance} (a tidy-eval assay symbol). The assay must be given explicitly as a character string via \code{assay = "..."}, matching \code{assayNames(object)}. Omitting \code{assay} or passing an unknown assay name raises an error, so users must deliberately choose which abundance matrix to use (commonly a library-size scaled assay from \code{scale_abundance()}). Update all calls, tests, and vignettes that used \code{.abundance = counts} to \code{assay = "counts"} (or the appropriate assay name).
