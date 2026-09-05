@@ -3,7 +3,7 @@
 
 \section{Changes in version 2.3.3}{
 \itemize{
-    \item For \code{glmmseq_lme4} and \code{glmmseq_glmmtmb}, pass \code{formula_dispersion} (a fixed-effects formula) to estimate tagwise dispersion with edgeR and plug it in. Pass \code{.dispersion} for a precomputed column, or neither to let each gene estimate phi.
+    \item For \code{glmmseq_lme4} and \code{glmmseq_glmmtmb}, pass \code{formula_dispersion} (a fixed-effects formula) to estimate tagwise dispersion with edgeR and plug it in, or omit it to let each gene estimate phi.
     \item Use \code{reformulas::nobars}/\code{findbars}/\code{subbars} instead of the deprecated \code{lme4} shims in the glmmSeq backend.
 }}
 

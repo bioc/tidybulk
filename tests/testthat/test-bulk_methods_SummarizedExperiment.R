@@ -397,12 +397,9 @@ test_that("differential trancript abundance - random effects SE", {
   # Skip this test as airway dataset has insufficient samples for random effects modeling
   skip("GLMMSeq random effects requires more samples than available in airway dataset")
   
-  # Custom dispersion
   airway_mini =
     airway_mini |>
     identify_abundant(formula_design = ~  dex)
-  
-  rowData(airway_mini)$disp_ = rep(2,nrow(airway_mini))
   
   res =
     airway_mini[1:10,] |>
@@ -410,7 +407,7 @@ test_that("differential trancript abundance - random effects SE", {
     test_differential_abundance(
       ~ dex + (1 + dex | cell),
       method = "glmmseq_lme4",
-      .dispersion = disp_,
+      formula_dispersion = ~ dex + cell,
       cores = 1
     )
   
@@ -428,19 +425,16 @@ test_that("differential trancript abundance - random effects SE - alternative .a
   # Skip this test as airway dataset has insufficient samples for random effects modeling
   skip("GLMMSeq random effects requires more samples than available in airway dataset")
   
-  # Custom dispersion
   airway_mini =
     airway_mini |>
     identify_abundant(formula_design = ~  dex)
-  
-  rowData(airway_mini)$disp_ = rep(2,nrow(airway_mini))
   
   res =
     airway_mini[1:10,] |>
     test_differential_abundance(
       ~ dex + (1 + dex | cell),
       method = "glmmseq_lme4",
-      .dispersion = disp_,
+      formula_dispersion = ~ dex + cell,
       cores = 1
     )
   

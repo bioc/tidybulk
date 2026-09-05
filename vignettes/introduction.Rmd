@@ -958,7 +958,7 @@ airway |>
 
 ### Mixed Models for Complex Designs
 
-glmmSeq [@ma2020glmmseq] is used for mixed models. Pass `formula_dispersion` as a fixed-effects formula for edgeR tagwise dispersion (you choose whether grouping factors enter that design). Omit it, or pass `.dispersion` for a precomputed column; with many samples, omitting both lets each gene estimate phi.
+glmmSeq [@ma2020glmmseq] is used for mixed models. Pass `formula_dispersion` as a fixed-effects formula for edgeR tagwise dispersion (you choose whether grouping factors enter that design). Omit it to let each gene estimate phi (useful with many samples).
 
 ```{r differential-expression-mixed-models}
 # Using glmmSeq for mixed models
