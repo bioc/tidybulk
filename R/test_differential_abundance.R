@@ -17,15 +17,16 @@
 #' @param .formula A formula representing the desired linear model. If there is more than one factor, they should be in the order factor of interest + additional factors.
 #' @param abundance The name of the transcript/gene abundance column (character, preferred)
 #' @param contrasts This parameter takes the format of the contrast parameter of the method of choice. For edgeR and limma-voom is a character vector. For DESeq2 is a list including a character vector of length three. The first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
-#' @param method A character vector. Available methods are "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT), "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb". Only one method can be specified at a time.
+#' @param method A character vector. Available methods are "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT), "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb". Only one method can be specified at a time. For glmmSeq, pass `formula_dispersion` (a fixed-effects formula for edgeR) to plug in tagwise dispersion, or omit it to let each gene estimate phi.
 #' @param test_above_log2_fold_change A positive real value. This works for edgeR and limma_voom methods. It uses the `treat` function, which tests that the difference in abundance is bigger than this threshold rather than zero \url{https://pubmed.ncbi.nlm.nih.gov/19176553}.
 #' @param scaling_method A character string. The scaling method passed to the back-end functions: edgeR and limma-voom (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile"). Setting the parameter to \"none\" will skip the compensation for sequencing-depth for the method edgeR or limma_voom.
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
 #' @param prefix A character string. The prefix you would like to add to the result columns. It is useful if you want to compare several methods.
+#' @param formula_dispersion A fixed-effects formula for edgeR tagwise dispersion (glmmSeq). If NULL, each gene estimates phi.
 #' @param significance_threshold DEPRECATED - A real between 0 and 1 (usually 0.05).
 #' @param fill_missing_values DEPRECATED - A boolean. Whether to fill missing sample/transcript values with the median of the transcript. This is rarely needed.
 #' @param .contrasts DEPRECATED - This parameter takes the format of the contrast parameter of the method of choice. For edgeR and limma-voom is a character vector. For DESeq2 is a list including a character vector of length three. The first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
-#' @param ... Further arguments passed to some of the internal experimental functions. For example for glmmSeq, it is possible to pass .dispersion, and .scaling_factor column tidyeval to skip the caluclation of dispersion and scaling and use precalculated values. This is helpful is you want to calculate those quantities on many genes and do DE testing on fewer genes. .scaling_factor is the TMM value that can be obtained with tidybulk::scale_abundance.
+#' @param ... Further arguments passed to some of the internal experimental functions. For glmmSeq: `.scaling_factor` skips TMM and uses that column from [scale_abundance()].
 #' @param .abundance DEPRECATED. The name of the transcript/gene abundance column (symbolic, for backward compatibility)
 #'
 #'
@@ -75,18 +76,9 @@
 #'
 #' Underlying method for glmmSeq framework:
 #'
-#' counts =
-#' .data |>
-#'   assay(my_assay)
+#' counts = assay(.data, my_assay)
 #'
-#' # Create design matrix for dispersion, removing random effects
-#' design =
-#'   model.matrix(
-#'     object = .formula |> lme4::nobars(),
-#'     data = metadata
-#'   )
-#'
-#' dispersion = counts |> edgeR::estimateDisp(design = design) %$% tagwise.dispersion |> setNames(rownames(counts))
+#' # Tagwise phi from edgeR if formula_dispersion is given.
 #'
 #'   glmmSeq( .formula,
 #'            countdata = counts ,
@@ -156,7 +148,9 @@
 #'   identify_abundant(factor_of_interest = condition) |>
 #'   test_differential_abundance(
 #'     ~ condition + (1 + condition | cell),
-#'     method = "glmmseq_lme4", cores = 1
+#'     method = "glmmseq_lme4",
+#'     formula_dispersion = ~ condition + cell,
+#'     cores = 1
 #'   )
 #'
 #' # confirm that lfcThreshold was used
@@ -202,6 +196,7 @@ setGeneric("test_differential_abundance", function(.data,
                                                    scaling_method = "TMM",
                                                    omit_contrast_in_colnames = FALSE,
                                                    prefix = "",
+                                                   formula_dispersion = NULL,
                                                    ...,
                                                    
                                                    # DEPRECATED
@@ -226,6 +221,7 @@ standardGeneric("test_differential_abundance"))
                                            scaling_method = "TMM",
                                            omit_contrast_in_colnames = FALSE,
                                            prefix = "",
+                                           formula_dispersion = NULL,
                                            ...,
                                            
                                            # DEPRECATED
@@ -342,6 +338,7 @@ such as batch effects (if applicable) in the formula.
       scaling_method = scaling_method,
       omit_contrast_in_colnames = omit_contrast_in_colnames,
       prefix = prefix,
+      formula_dispersion = formula_dispersion,
       ...
     )
   else
@@ -443,15 +440,16 @@ setMethod(
 #' @param .formula A formula representing the desired linear model. If there is more than one factor, they should be in the order factor of interest + additional factors.
 #' @param abundance The name of the transcript/gene abundance column (character, preferred)
 #' @param contrasts This parameter takes the format of the contrast parameter of the method of choice. For edgeR and limma-voom is a character vector. For DESeq2 is a list including a character vector of length three. The first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
-#' @param method A character vector. Available methods are "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT), "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb". Only one method can be specified at a time.
+#' @param method A character vector. Available methods are "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT), "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb". Only one method can be specified at a time. For glmmSeq, pass `formula_dispersion` (a fixed-effects formula for edgeR) to plug in tagwise dispersion, or omit it to let each gene estimate phi.
 #' @param test_above_log2_fold_change A positive real value. This works for edgeR and limma_voom methods. It uses the `treat` function, which tests that the difference in abundance is bigger than this threshold rather than zero \url{https://pubmed.ncbi.nlm.nih.gov/19176553}.
 #' @param scaling_method A character string. The scaling method passed to the back-end functions: edgeR and limma-voom (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile"). Setting the parameter to \"none\" will skip the compensation for sequencing-depth for the method edgeR or limma_voom.
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
 #' @param prefix A character string. The prefix you would like to add to the result columns. It is useful if you want to compare several methods.
+#' @param formula_dispersion A fixed-effects formula for edgeR tagwise dispersion (glmmSeq). If NULL, each gene estimates phi.
 #' @param significance_threshold DEPRECATED - A real between 0 and 1 (usually 0.05).
 #' @param fill_missing_values DEPRECATED - A boolean. Whether to fill missing sample/transcript values with the median of the transcript. This is rarely needed.
 #' @param .contrasts DEPRECATED - This parameter takes the format of the contrast parameter of the method of choice. For edgeR and limma-voom is a character vector. For DESeq2 is a list including a character vector of length three. The first covariate is the one the model is tested against (e.g., ~ factor_of_interest)
-#' @param ... Further arguments passed to some of the internal experimental functions. For example for glmmSeq, it is possible to pass .dispersion, and .scaling_factor column tidyeval to skip the caluclation of dispersion and scaling and use precalculated values. This is helpful is you want to calculate those quantities on many genes and do DE testing on fewer genes. .scaling_factor is the TMM value that can be obtained with tidybulk::scale_abundance.
+#' @param ... Further arguments passed to some of the internal experimental functions. For glmmSeq: `.scaling_factor` skips TMM and uses that column from [scale_abundance()].
 #' @param .abundance DEPRECATED. The name of the transcript/gene abundance column (symbolic, for backward compatibility)
 #'
 #'
@@ -501,18 +499,9 @@ setMethod(
 #'
 #' Underlying method for glmmSeq framework:
 #'
-#' counts =
-#' .data |>
-#'   assay(my_assay)
+#' counts = assay(.data, my_assay)
 #'
-#' # Create design matrix for dispersion, removing random effects
-#' design =
-#'   model.matrix(
-#'     object = .formula |> lme4::nobars(),
-#'     data = metadata
-#'   )
-#'
-#' dispersion = counts |> edgeR::estimateDisp(design = design) %$% tagwise.dispersion |> setNames(rownames(counts))
+#' # Tagwise phi from edgeR if formula_dispersion is given.
 #'
 #'   glmmSeq( .formula,
 #'            countdata = counts ,
@@ -582,7 +571,9 @@ setMethod(
 #'   identify_abundant(factor_of_interest = condition) |>
 #'   test_differential_expression(
 #'     ~ condition + (1 + condition | cell),
-#'     method = "glmmseq_lme4", cores = 1
+#'     method = "glmmseq_lme4",
+#'     formula_dispersion = ~ condition + cell,
+#'     cores = 1
 #'   )
 #'
 #' # confirm that lfcThreshold was used
@@ -629,6 +620,7 @@ setGeneric("test_differential_expression", function(.data,
                                                    scaling_method = "TMM",
                                                    omit_contrast_in_colnames = FALSE,
                                                    prefix = "",
+                                                   formula_dispersion = NULL,
                                                    ...,
                                                    
                                                    # DEPRECATED
@@ -649,8 +641,8 @@ standardGeneric("test_differential_expression"))
 setMethod(
   "test_differential_expression",
   "SummarizedExperiment",
-  function(.data, .formula, abundance = assayNames(.data)[1], contrasts = NULL, method = c("edgeR_quasi_likelihood", "edgeR_likelihood_ratio", "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb"), test_above_log2_fold_change = NULL, scaling_method = "TMM", omit_contrast_in_colnames = FALSE, prefix = "", ..., significance_threshold = NULL, fill_missing_values = NULL, .contrasts = NULL, .abundance = NULL) {
-    test_differential_abundance(.data, .formula, abundance = abundance, contrasts = contrasts, method = method, test_above_log2_fold_change = test_above_log2_fold_change, scaling_method = scaling_method, omit_contrast_in_colnames = omit_contrast_in_colnames, prefix = prefix, ..., significance_threshold = significance_threshold, fill_missing_values = fill_missing_values, .contrasts = .contrasts, .abundance = .abundance)
+  function(.data, .formula, abundance = assayNames(.data)[1], contrasts = NULL, method = c("edgeR_quasi_likelihood", "edgeR_likelihood_ratio", "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb"), test_above_log2_fold_change = NULL, scaling_method = "TMM", omit_contrast_in_colnames = FALSE, prefix = "", formula_dispersion = NULL, ..., significance_threshold = NULL, fill_missing_values = NULL, .contrasts = NULL, .abundance = NULL) {
+    test_differential_abundance(.data, .formula, abundance = abundance, contrasts = contrasts, method = method, test_above_log2_fold_change = test_above_log2_fold_change, scaling_method = scaling_method, omit_contrast_in_colnames = omit_contrast_in_colnames, prefix = prefix, formula_dispersion = formula_dispersion, ..., significance_threshold = significance_threshold, fill_missing_values = fill_missing_values, .contrasts = .contrasts, .abundance = .abundance)
   }
 )
 
@@ -664,8 +656,8 @@ setMethod(
 setMethod(
   "test_differential_expression",
   "RangedSummarizedExperiment",
-  function(.data, .formula, abundance = assayNames(.data)[1], contrasts = NULL, method = c("edgeR_quasi_likelihood", "edgeR_likelihood_ratio", "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb"), test_above_log2_fold_change = NULL, scaling_method = "TMM", omit_contrast_in_colnames = FALSE, prefix = "", ..., significance_threshold = NULL, fill_missing_values = NULL, .contrasts = NULL, .abundance = NULL) {
-    test_differential_abundance(.data, .formula, abundance = abundance, contrasts = contrasts, method = method, test_above_log2_fold_change = test_above_log2_fold_change, scaling_method = scaling_method, omit_contrast_in_colnames = omit_contrast_in_colnames, prefix = prefix, ..., significance_threshold = significance_threshold, fill_missing_values = fill_missing_values, .contrasts = .contrasts, .abundance = .abundance)
+  function(.data, .formula, abundance = assayNames(.data)[1], contrasts = NULL, method = c("edgeR_quasi_likelihood", "edgeR_likelihood_ratio", "edger_robust_likelihood_ratio", "DESeq2", "limma_voom", "limma_voom_sample_weights", "glmmseq_lme4", "glmmseq_glmmtmb"), test_above_log2_fold_change = NULL, scaling_method = "TMM", omit_contrast_in_colnames = FALSE, prefix = "", formula_dispersion = NULL, ..., significance_threshold = NULL, fill_missing_values = NULL, .contrasts = NULL, .abundance = NULL) {
+    test_differential_abundance(.data, .formula, abundance = abundance, contrasts = contrasts, method = method, test_above_log2_fold_change = test_above_log2_fold_change, scaling_method = scaling_method, omit_contrast_in_colnames = omit_contrast_in_colnames, prefix = prefix, formula_dispersion = formula_dispersion, ..., significance_threshold = significance_threshold, fill_missing_values = fill_missing_values, .contrasts = .contrasts, .abundance = .abundance)
   }
 )
 
@@ -1068,6 +1060,7 @@ get_differential_transcript_abundance_bulk_voom_SE <- function(
 #' @param method A string character. Either "edgeR_quasi_likelihood" (i.e., QLF), "edgeR_likelihood_ratio" (i.e., LRT)
 #' @param scaling_method A character string. The scaling method passed to the backend function (i.e., edgeR::normLibSizes; "TMM","TMMwsp","RLE","upperquartile")
 #' @param .scaling_factor A tidyeval (column name) for the precalculated TMM scaling
+#' @param formula_dispersion A fixed-effects formula for edgeR tagwise dispersion. If NULL, each gene estimates phi.
 #' @param omit_contrast_in_colnames If just one contrast is specified you can choose to omit the contrast label in the colnames.
 #' @param ... Additional arguments for glmmSeq
 #'
@@ -1085,12 +1078,11 @@ get_differential_transcript_abundance_glmmSeq_SE <- function(
     .scaling_factor = NULL,
     omit_contrast_in_colnames = FALSE,
     prefix = "",
-    .dispersion = NULL,
+    formula_dispersion = NULL,
     ...,
     .abundance = NULL
 ) {
   
-  .dispersion = enquo(.dispersion)
   .scaling_factor = enquo(.scaling_factor)
   
   # Deprecation logic for .abundance
@@ -1134,26 +1126,24 @@ get_differential_transcript_abundance_glmmSeq_SE <- function(
     .data |>
     assay(my_assay)
   
-  # Create design matrix for dispersion, removing random effects
-  design =
-    model.matrix(
-      object = .formula |> lme4::nobars(),
-      data = metadata
+  if (!is.null(formula_dispersion)) {
+    .data <- estimate_dispersion(.data, formula_dispersion, my_assay)
+    message(
+      "tidybulk says: plugging rowData column dispersion_shrinked into glmmSeq."
     )
-  
-  if(.dispersion |> quo_is_symbolic())
-    dispersion = rowData(.data)[,quo_name(.dispersion),drop=FALSE] |> as_tibble(rownames = feature__$name) |> deframe()
-  else
-    dispersion = counts |> edgeR::estimateDisp(design = design) %$% tagwise.dispersion |> setNames(rownames(counts))
-  
-  # # Check dispersion
-  # if(!names(dispersion) |> sort() |> identical(
-  #   rownames(counts) |>
-  #   sort()
-  # )) stop("tidybulk says: The features in the dispersion vector do not overlap with the feature in the assay")
-  
-  # Make sure the order matches the counts
-  dispersion = dispersion[rownames(counts)]
+    dispersion <- stats::setNames(
+      as.numeric(rowData(.data)$dispersion_shrinked),
+      rownames(.data)
+    )[rownames(counts)]
+  } else {
+    message(
+      "tidybulk says: no formula_dispersion given; ",
+      "glmmSeq will estimate phi for each gene. ",
+      "This is only recommended when the degrees of freedom ",
+      "(i.e. sample size - parameters) is very high (e.g. > 50)."
+    )
+    dispersion <- NA
+  }
   
   # Scaling
   if(.scaling_factor |> quo_is_symbolic())

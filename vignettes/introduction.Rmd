@@ -958,7 +958,7 @@ airway |>
 
 ### Mixed Models for Complex Designs
 
-glmmSeq [@ma2020glmmseq] is used for generalized linear mixed models for RNA-seq data.
+glmmSeq [@ma2020glmmseq] is used for mixed models. Pass `formula_dispersion` as a fixed-effects formula for edgeR tagwise dispersion (you choose whether grouping factors enter that design). Omit it to let each gene estimate phi (useful with many samples).
 
 ```{r differential-expression-mixed-models}
 # Using glmmSeq for mixed models
@@ -968,10 +968,11 @@ airway |>
   # Select 100 genes in the interest of execution time
   _[1:100,] |>
 
-  # Fit model
+  # Fit model; formula_dispersion is the edgeR design for tagwise phi
   test_differential_expression(
     ~ dex + (1|cell), 
-    method = "glmmseq_lme4", 
+    method = "glmmseq_lme4",
+    formula_dispersion = ~ dex + cell,
     cores = 1,
 	prefix = "glmmseq__"
   ) 
